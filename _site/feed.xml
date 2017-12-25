@@ -1,0 +1,309 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Bharath Thiruveedula Blog</title>
+    <description>My blog about everything related to computer science</description>
+    <link>http://bharaththiruveedula.github.io</link>
+    <atom:link href="http://bharaththiruveedula.github.io/feed.xml" rel="self" type="application/rss+xml" />
+    
+      <item>
+        <title>Let&#39;s guess who can survive in Titanic disaster</title>
+        <description>&lt;p&gt;I have been trying to start some work in datascience area for a long time. I read many tutorials on DS, but haven’t any done any practical application. So this blog series concentrates on taking some problem set and solve it using different machine learning algorithms any explain the algorithm along the way.&lt;/p&gt;
+
+&lt;p&gt;First of all let’s set the context first. The content of this blog series can concentrate on any part of data science pipeline. The below diagram shows exactly what I mean by data science pipeline. So this series focuses on data visualisation or just data mungling or how to run predictive models in production or any combination of all these.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;https://raw.githubusercontent.com/bharaththiruveedula/bharaththiruveedula.github.io/master/public/img/data_science_pipeline.png&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;For this post, I took the titanic problem from kaggle. The problem is to predict the survivability of passenger in the great titanic disaster. This PS is a beginner level problem in Kaggle(for that matter in data science itself). So obviously in this post we aren’t discussing about “end product” in data science pipeline.&lt;/p&gt;
+
+&lt;p&gt;By the way if you like reading in jupyter notebook style &lt;a href=&quot;https://github.com/bharaththiruveedula/MachineLearning/blob/master/kaggle/titanic/Titanic-Kaggle.ipynb&quot;&gt;here&lt;/a&gt; is the notebook of the below content.&lt;/p&gt;
+
+&lt;h3 id=&quot;data-ingestion&quot;&gt;Data Ingestion&lt;/h3&gt;
+
+&lt;p&gt;Data Ingestion is the way of feeding your data for further steps in the data science pipeling. In this case we get the training set and test set from &lt;a href=&quot;https://www.kaggle.com/c/titanic/data&quot;&gt;kaggle&lt;/a&gt;. Download those sets and load into pandas dataframe:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;# First of all import all libraries that we need in our application
+import pandas as pd
+import matplotlib as plt
+%matplotlib inline
+import numpy as np
+import warnings
+warnings.filterwarnings(&#39;ignore&#39;)
+
+# Here is the code to load the data
+train_dataset = pd.read_csv(&quot;train.csv&quot;)
+test_dataset = pd.read_csv(&quot;test.csv&quot;)
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h3 id=&quot;data-wrangling-and-munging&quot;&gt;Data Wrangling and Munging&lt;/h3&gt;
+&lt;p&gt;Data Munging is basically the hip term for cleaning up a messy data set. It is usually used in conjunction with another hip term ‘data science’ which is basically data analysis. So we just need to clean the data. So to do that we first analyse the data we got from kaggle.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;print(train_dataset)
+PassengerId	Survived	Pclass	Name	Sex	Age	SibSp	Parch	Ticket	Fare	Cabin	Embarked
+0	1	0	3	Braund, Mr. Owen Harris	male	22.0	1	0	A/5 21171	7.2500	NaN	S
+1	2	1	1	Cumings, Mrs. John Bradley (Florence Briggs Th...	female	38.0	1	0	PC 17599	71.2833	C85	C
+2	3	1	3	Heikkinen, Miss. Laina	female	26.0	0	0	STON/O2. 3101282	7.9250	NaN	S
+3	4	1	1	Futrelle, Mrs. Jacques Heath (Lily May Peel)	female	35.0	1	0	113803	53.1000	C123	S
+4	5	0	3	Allen, Mr. William Henry	male	35.0	0	0	373450	8.0500	NaN	S
+5	6	0	3	Moran, Mr. James	male	NaN	0	0	330877	8.4583	NaN	Q
+.....
+891 rows × 12 columns
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;As you can see it has 891 rows of data and 12 columns/features. Let’s analyse the properties of each feature&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;print(train_dataset.describe())
+
+PassengerId	Survived	Pclass	Age	SibSp	Parch	Fare
+count	891.000000	891.000000	891.000000	714.000000	891.000000	891.000000	891.000000
+mean	446.000000	0.383838	2.308642	29.699118	0.523008	0.381594	32.204208
+std	257.353842	0.486592	0.836071	14.526497	1.102743	0.806057	49.693429
+min	1.000000	0.000000	1.000000	0.420000	0.000000	0.000000	0.000000
+25%	223.500000	0.000000	2.000000	20.125000	0.000000	0.000000	7.910400
+50%	446.000000	0.000000	3.000000	28.000000	0.000000	0.000000	14.454200
+75%	668.500000	1.000000	3.000000	38.000000	1.000000	0.000000	31.000000
+max	891.000000	1.000000	3.000000	80.000000	8.000000	6.000000	512.329200
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;If you observe the age feature, the count is just 714 the others are missing values. So let’s fill those values with median&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;train_dataset[&#39;Age&#39;].fillna(train_dataset[&#39;Age&#39;].median(), inplace=True)
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Now check the properties of each feature again&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;print(train_dataset.describe())
+
+
+PassengerId	Survived	Pclass	Age	SibSp	Parch	Fare
+count	891.000000	891.000000	891.000000	891.000000	891.000000	891.000000	891.000000
+mean	446.000000	0.383838	2.308642	29.361582	0.523008	0.381594	32.204208
+std	257.353842	0.486592	0.836071	13.019697	1.102743	0.806057	49.693429
+min	1.000000	0.000000	1.000000	0.420000	0.000000	0.000000	0.000000
+25%	223.500000	0.000000	2.000000	22.000000	0.000000	0.000000	7.910400
+50%	446.000000	0.000000	3.000000	28.000000	0.000000	0.000000	14.454200
+75%	668.500000	1.000000	3.000000	35.000000	1.000000	0.000000	31.000000
+max	891.000000	1.000000	3.000000	80.000000	8.000000	6.000000	512.329200
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Now let’s see visually is there any correlation between sex and survivability&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;survived_gender = train_dataset[train_dataset[&#39;Survived&#39;]==1][&#39;Sex&#39;].value_counts()
+dead_gender = train_dataset[train_dataset[&#39;Survived&#39;]==0][&#39;Sex&#39;].value_counts()
+df = pd.DataFrame([survived_gender,dead_gender])
+df.index = [&#39;Survived&#39;,&#39;Dead&#39;]
+df.plot(kind=&#39;bar&#39;,stacked=True, figsize=(15,8))
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;&lt;img src=&quot;https://raw.githubusercontent.com/bharaththiruveedula/bharaththiruveedula.github.io/master/public/img/titanic-bar-graph.png&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;It is obvious that majority of persons who survived are women. In the similar way, we can check whether the feature is relevant or not.&lt;/p&gt;
+
+&lt;h3 id=&quot;data-model-prediction&quot;&gt;Data model prediction&lt;/h3&gt;
+
+&lt;p&gt;Let’s try to build the prediction model using random forest algorithm . The Random Forest technique handles the overfitting problem you faced with decision trees. It grows multiple classification trees using the training set. At the time of prediction, each tree is used to come up with a prediction and every outcome is counted as a vote. For example, if you have trained 3 trees with 2 saying a passenger in the test set will survive and 1 says he will not, the passenger will be classified as a survivor. This approach of overtraining trees, but having the majority’s vote count as the actual classification decision, avoids overfitting.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;# Import the `RandomForestClassifier`
+from sklearn.ensemble import RandomForestClassifier
+features = train_dataset[[&quot;Pclass&quot;, &quot;Age&quot;, &quot;Sex&quot;, &quot;Fare&quot;, &quot;SibSp&quot;, &quot;Parch&quot;, &quot;Embarked&quot;]].values
+target = train_dataset[&quot;Survived&quot;].values
+forest = RandomForestClassifier(max_depth = 10, min_samples_split=2, n_estimators = 100, random_state = 1)
+my_forest = forest.fit(features,target)
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Oh wait! you might have got this error&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;---------------------------------------------------------------------------
+ValueError                                Traceback (most recent call last)
+&amp;lt;ipython-input-104-0f31af4a8107&amp;gt; in &amp;lt;module&amp;gt;()
+      1 # Building and fitting my_forest
+      2 forest = RandomForestClassifier(max_depth = 10, min_samples_split=2, n_estimators = 100, random_state = 1)
+----&amp;gt; 3 my_forest = forest.fit(features,target)
+
+/usr/local/lib/python2.7/dist-packages/sklearn/ensemble/forest.pyc in fit(self, X, y, sample_weight)
+    245         &quot;&quot;&quot;
+    246         # Validate or convert input data
+--&amp;gt; 247         X = check_array(X, accept_sparse=&quot;csc&quot;, dtype=DTYPE)
+    248         y = check_array(y, accept_sparse=&#39;csc&#39;, ensure_2d=False, dtype=None)
+    249         if sample_weight is not None:
+
+/usr/local/lib/python2.7/dist-packages/sklearn/utils/validation.pyc in check_array(array, accept_sparse, dtype, order, copy, force_all_finite, ensure_2d, allow_nd, ensure_min_samples, ensure_min_features, warn_on_dtype, estimator)
+    431                                       force_all_finite)
+    432     else:
+--&amp;gt; 433         array = np.array(array, dtype=dtype, order=order, copy=copy)
+    434
+    435         if ensure_2d:
+
+ValueError: could not convert string to float: Q
+
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;If you see the error is due to incomplete data cleaning. So let’s clean it.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;train_dataset[&quot;Sex&quot;][train_dataset[&quot;Sex&quot;]==&quot;male&quot;] = 0
+train_dataset[&quot;Sex&quot;][train_dataset[&quot;Sex&quot;]==&quot;female&quot;] = 1
+train_dataset[&quot;Embarked&quot;] = train_dataset[&quot;Embarked&quot;].fillna(&quot;S&quot;)
+# Convert the Embarked classes to integer form
+train_dataset[&quot;Embarked&quot;][train_dataset[&quot;Embarked&quot;] == &quot;S&quot;] = 0
+train_dataset[&quot;Embarked&quot;][train_dataset[&quot;Embarked&quot;] == &quot;C&quot;] = 1
+train_dataset[&quot;Embarked&quot;][train_dataset[&quot;Embarked&quot;] == &quot;Q&quot;] = 2
+
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;same thing for test data too.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;
+# Impute the missing value with the median
+test_dataset.Fare[152] = test_dataset[&quot;Fare&quot;].median()
+test_dataset[&quot;Sex&quot;][test_dataset[&quot;Sex&quot;]==&quot;male&quot;] = 0
+test_dataset[&quot;Sex&quot;][test_dataset[&quot;Sex&quot;]==&quot;female&quot;] = 1
+test_dataset[&quot;Age&quot;] = test_dataset[&quot;Age&quot;].fillna(test_dataset.Age.median())
+test_dataset[&quot;Embarked&quot;] = test_dataset[&quot;Embarked&quot;].fillna(&quot;S&quot;)
+# Convert the Embarked classes to integer form
+test_dataset[&quot;Embarked&quot;][test_dataset[&quot;Embarked&quot;] == &quot;S&quot;] = 0
+test_dataset[&quot;Embarked&quot;][test_dataset[&quot;Embarked&quot;] == &quot;C&quot;] = 1
+test_dataset[&quot;Embarked&quot;][test_dataset[&quot;Embarked&quot;] == &quot;Q&quot;] = 2
+# Extract the features from the test set: Pclass, Sex, Age, and Fare.
+test_features = test_dataset[[&quot;Pclass&quot;, &quot;Age&quot;, &quot;Sex&quot;, &quot;Fare&quot;, &quot;SibSp&quot;, &quot;Parch&quot;, &quot;Embarked&quot;]].values
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Now let’s predict with the test data&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;# Make your prediction using the test set
+my_prediction = my_forest.predict(test_features)
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Now write the predicted data in the format what kaggle expects&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;# Create a data frame with two columns: PassengerId &amp;amp; Survived. Survived contains your predictions
+PassengerId = np.array(test_dataset[&quot;PassengerId&quot;]).astype(int)
+my_solution = pd.DataFrame(my_prediction, PassengerId, columns = [&quot;Survived&quot;])
+my_solution.to_csv(&quot;my_solution_one.csv&quot;, index_label = [&quot;PassengerId&quot;])
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;This is simplest way of solving the titanic problem. But we have to fine tune some parameter to get even more good score. In the next post in this series, let’s look into importance data visualisation.&lt;/p&gt;
+</description>
+        <pubDate>Sun, 24 Dec 2017 18:43:07 +0530</pubDate>
+        <link>http://bharaththiruveedula.github.io//2017/12/24/titanic-kaggle/</link>
+        <guid isPermaLink="true">http://bharaththiruveedula.github.io//2017/12/24/titanic-kaggle/</guid>
+      </item>
+    
+      <item>
+        <title>New year resolution before the new year!</title>
+        <description>&lt;p&gt;I have been working on multiple things like OpenStack Tacker, TOSCA Parser, Heat Translator and recently started contributing to ONOS but there is some vacuum which always troubles me that is being comfortable with Algorithms and Data Structures. Though I am interested in this topic I totally moved to web development and open source contributions in my undergraduate level. And then in my day job I am mostly concentrating of cloud computing and SDN. So I firmly decided to be good at competitive programming. So my agenda is to solve at least 2 problems from SPOJ everyday and write blog post on them.By following this:&lt;/p&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;I can be good at Competitive Programming&lt;/li&gt;
+  &lt;li&gt;I will make sure I write a blog post everyday&lt;/li&gt;
+  &lt;li&gt;I will have some basis for distributed systems and machine learning(though paxos, raft or linear regression won’t be in this agenda, but it is indirectly related to algos)
+It starts from today :D&lt;/li&gt;
+&lt;/ol&gt;
+</description>
+        <pubDate>Tue, 06 Dec 2016 01:55:15 +0530</pubDate>
+        <link>http://bharaththiruveedula.github.io//2016/12/06/new-year-resolutions/</link>
+        <guid isPermaLink="true">http://bharaththiruveedula.github.io//2016/12/06/new-year-resolutions/</guid>
+      </item>
+    
+      <item>
+        <title>Openstack Barcelona Summit</title>
+        <description>&lt;p&gt;Attended my first Openstack summit at Barcelona. It’s a fantastic event, enjoyed the culture, people and weather. Glad to see the real people instead of just talking to IRC nicks :P As you already knew from my previous post I proposed for a talk in the openstack summit. Though I didn’t get through the main category, I was able to present in vBrownBag category.Here are the links of my presentations at the summit.&lt;/p&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;&lt;a href=&quot;https://www.youtube.com/watch?v=90R8hxkPqYs&quot;&gt;Create VNFs on the fly – VNF Components in Tacker&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;https://www.youtube.com/watch?v=ZFgLTlDFJjQ&quot;&gt;End to End Network Deployment&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;https://www.youtube.com/watch?v=83ATiSaeNMY&quot;&gt;TOSCA Substitution Mappings and more with TOSCA&lt;/a&gt;&lt;/li&gt;
+&lt;/ol&gt;
+</description>
+        <pubDate>Tue, 06 Dec 2016 01:30:36 +0530</pubDate>
+        <link>http://bharaththiruveedula.github.io//2016/12/06/openstack-summit-barcelona/</link>
+        <guid isPermaLink="true">http://bharaththiruveedula.github.io//2016/12/06/openstack-summit-barcelona/</guid>
+      </item>
+    
+      <item>
+        <title>Create VNFs on the fly using VNF Components in Tacker</title>
+        <description>&lt;p&gt;Most of the Telcos are busy now building their own VNFs and searching for the most suitable Virtual Infrastructure Manager for running their VNFs(mostly solved :) ) As in this area it mostly involves proprietary software, we find very dry and fuzzy discussions on the web. So in this post I will try to discuss with examples. In this post we will learn about NFV nomenclature and discuss specifically about VNF Component by taking &lt;a href=&quot;http://www.projectclearwater.org/&quot;&gt;project clearwater&lt;/a&gt; as an example. It is an open source solution for IMS Core developed by MetaSwitch Networks.&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;Architecture of vIMS:&lt;/strong&gt; &lt;img src=&quot;https://tbharath91.files.wordpress.com/2016/08/clearwater_architecture.png?w=300&quot; alt=&quot;Clearwater_Architecture&quot; /&gt; Let’s very briefly discuss about these components before we jump into NFV world.
+&lt;strong&gt;Bono&lt;/strong&gt;: Bono acts like SIP edge proxy for the rest of IMS system. And it also provides WebRTC interface for the clients. A client is anchored to a particular Bono node for the duration of its registration.
+&lt;strong&gt;Sprout&lt;/strong&gt;: Sprout is both IMS registrar and authoritative router proxy. So it mostly handles client authentication. &lt;strong&gt;Homestead&lt;/strong&gt;: Homestead provides web service interface to sprout for retrieving the authentication credentials and user profile information.
+&lt;strong&gt;Homer&lt;/strong&gt;: Homer is a XML Document Management Server(XDMS) used to store MMTEL service settings document for each user. &lt;strong&gt;Ralf&lt;/strong&gt;: Ralf main duty is to provide HTTP endpoint for storing bill related events.
+&lt;strong&gt;Ellis&lt;/strong&gt;: Ellis is a sample provisioning portal providing self sign-up, password management, line management and control of MMTEL service settings.&lt;/p&gt;
+
+&lt;p&gt;Assume we are building our own vIMS using the above VNFs. We have built these Virtual Network Functions, now the next step is to host these VNFs on top of any cloud infrastructure. This infrastructure which host any VNF is called Virtual Infrastructure Manager(VIM), for example OpenStack. But we need a service which can be part of the VIM that orchestrates and manages these VNFs, such service is called NFV Orchestrator and VNF Manager respectively. The most popular examples for NFV Orchestrator and VNF manager are &lt;a href=&quot;https://github.com/openstack/tacker&quot;&gt;OpenStack Tacker&lt;/a&gt;, &lt;a href=&quot;http://openbaton.github.io&quot;&gt;OpenBaton&lt;/a&gt;.&lt;/p&gt;
+
+&lt;p&gt;For explaining about VNF Components, we mainly concentrate on Tacker. Tacker is an OpenStack based both NFV Orchestrator and generic VNF Manager. But one of drawback or pain point of Tacker is to provide the Images beforehand for each of these components we discussed. The problem of this approach is whenever we want to launch the new version of your IMS, we have to build new Image and upload to cloud. So it is very hard to upgrade. So the solution for this problem is to use VNF components. How VNF components will solve this issue? Most of the NFV orchestrator consumes TOSCA templates both (NSD and VNFD) to launch the Network Service. In VNFD we have a new attribute called VNFC. Using this attribute we can specify shell script, ansible playbook or run puppet agent to install these network function. Using this approach we can easily upgrade the software in future and we can create the VNFs on fly. I am trying to show how we can create this vIMS solution and make a call on the fly using VNFC and Tacker in this OpenStack summit. You can be part of this demo by voting to this talk. How can you do that? Visit https://www.openstack.org/summit/barcelona-2016/vote-for-speakers/presentation/ and search for “CREATE VNFS ON THE FLY - VNF COMPONENTS IN TACKER” and cast your vote :) P.S: Though it is hypothetical scenario, I am running puppet server and IMS on different machines in my OpenStack setup at my home. And using port forwarding I have exposed those services. Initially all of my family members were registered to that service and communicating through SIP client(crazy adapters :P)&lt;/p&gt;
+</description>
+        <pubDate>Tue, 02 Aug 2016 23:23:06 +0530</pubDate>
+        <link>http://bharaththiruveedula.github.io//2016/08/02/create-vnfs-on-the-fly-using-tacker/</link>
+        <guid isPermaLink="true">http://bharaththiruveedula.github.io//2016/08/02/create-vnfs-on-the-fly-using-tacker/</guid>
+      </item>
+    
+      <item>
+        <title>Exams are over</title>
+        <description>&lt;p&gt;Thank God, exams are over with every answer ending with lol. Lot of things to do in the ultimate month of 2012. First of all I need to restart my Mozilla Student Project, &lt;a href=&quot;https://github.com/bharaththiruveedula/Map-your-friend&quot;&gt;Map-Your-Friend&lt;/a&gt;. I have to concentrate mainly on the group feature and mainly the CSS, which is very bad at the present state, better to use &lt;a href=&quot;http://twitter.github.com/bootstrap/&quot;&gt;twitter-bootstrap&lt;/a&gt;. Second I have to submit my patch to firebug regarding cookie issue. The next one is to start contributing to gaia (Front end code of Firefox OS) which is appealing to me . At least I have to setup the environment for that , and thanks for &lt;a href=&quot;http://vimeo.com/channels/405843/50801661&quot;&gt;Preston&lt;/a&gt; for creating videos on gaia which is very useful for beginners to get started. Next I must brush up the concepts in bash scripting and solve some problems in advanced bash scripting guide. And finally New Year celebrations ofcourse !:)&lt;/p&gt;
+</description>
+        <pubDate>Thu, 06 Dec 2012 17:00:13 +0530</pubDate>
+        <link>http://bharaththiruveedula.github.io//2012/12/06/exams-are-over/</link>
+        <guid isPermaLink="true">http://bharaththiruveedula.github.io//2012/12/06/exams-are-over/</guid>
+      </item>
+    
+      <item>
+        <title>First encounter with Git</title>
+        <description>&lt;p&gt;When I am developing an application, I used to maintain different copies of the project because in one copy I store all the files which is working fine as we expected, then I thought to improve a feature to my application so I created another copy of that project and wrote that feature and that works fine and I merged both.&lt;/p&gt;
+
+&lt;p&gt;This is one use why I use different copies of same project . And the second use is to backup the project files. For this I used tar the project and named it with that particular date to make sure that we can restore the files of that particular day (Just like backing up of your database). So at the end of the day for one application I have many tar balls, it was just annoying and frustating me. So I searched for many tools that can solve my problems then I came to know there is a concept called Version Control System(VCS) or Source Code Management(SCM) which delivers the same what I wanted . There are many tools for this SCM namely SVN ,CVS , GIT etc., The last tool so called GIT is the most popular and widely used tool for SCM. We have website called github.com which will support git SCM to host our code If you want to develop an application with these features just go to github.com and register for an account and create a repository (just like folder for your project) and follow the instructions given in the website And this is my github page https://github.com/bharaththiruveedula&lt;/p&gt;
+</description>
+        <pubDate>Fri, 02 Nov 2012 15:40:52 +0530</pubDate>
+        <link>http://bharaththiruveedula.github.io//2012/11/02/first-encounter-with-git/</link>
+        <guid isPermaLink="true">http://bharaththiruveedula.github.io//2012/11/02/first-encounter-with-git/</guid>
+      </item>
+    
+      <item>
+        <title>First Hackathon</title>
+        <description>&lt;p&gt;On August 11th and 12th, I have attended Yahoo Open Hack. It was my First Hackathon, really excited . I walked into Sheraton Bangalore for Yahoo Open Hack, with a loads of imagination . The Sheraton hotel and Yahoo hospitality totally swept me off. Yahoo tech crew was really cool.&lt;/p&gt;
+
+&lt;p&gt;We formed a team with Abhiram, vamsi, sagar. We decide to work on a project which displays all the user’s post from all his social networking sites, but after starting the project we face some difficulties with OAuth and facebook API, So later on we decided to another project like money management system, we some how managed to complete our hack with in the dead line. We submitted the hack, as we expected we are not selected for the top 10, but we learnt a lot from the first Hackathon, Yahoo is really amazing. The food was awesome  and finally we left the sheraton with nice Yahoo goodies, bean bags(the best part).&lt;/p&gt;
+</description>
+        <pubDate>Mon, 03 Sep 2012 17:14:44 +0530</pubDate>
+        <link>http://bharaththiruveedula.github.io//2012/09/03/first-hackathon/</link>
+        <guid isPermaLink="true">http://bharaththiruveedula.github.io//2012/09/03/first-hackathon/</guid>
+      </item>
+    
+      <item>
+        <title>First contribution to firebug</title>
+        <description>&lt;p&gt;After a long time , I believe that this is the time to post a new one in my blog , because I made my first contribution to &lt;a href=&quot;http://getfirebug.com&quot;&gt;firebug &lt;/a&gt;, which is famous addon for firefox and has the highest downloads in Mozilla Addon Website . The only person which made it possible is &lt;a href=&quot;http://www.softwareishard.com/blog/&quot;&gt;Jan Honza Odvarko&lt;/a&gt; . I am very thankful to Honza to help me out to made it . Actually my contribution is to solve the &lt;a href=&quot;http://code.google.com/p/fbug/issues/detail?id=5592&quot;&gt;bug&lt;/a&gt; , which is enhancement bug , I actually made two context menus which when selected will copy the URL/POST parameters to users clipboard. But in the test case Honza wrote the test drive for me . Once again I am graceful to Honza who clarified my doubts patiently(silly though :P)&lt;/p&gt;
+</description>
+        <pubDate>Fri, 20 Jul 2012 16:03:37 +0530</pubDate>
+        <link>http://bharaththiruveedula.github.io//2012/07/20/first-contribution-to-firebug/</link>
+        <guid isPermaLink="true">http://bharaththiruveedula.github.io//2012/07/20/first-contribution-to-firebug/</guid>
+      </item>
+    
+      <item>
+        <title>First one was Rejected and the Second one was accepted</title>
+        <description>&lt;p&gt;After 10 days of review the Mozilla Addons team reviewed by first addon and declared that my addon was rejected . They mention the reason  of rejection as “The addon Search for it was rejected because this feature is already present in latest versions of Firefox” . So I decided to make another addon as early as possible because they are a lot of time to review ,so I made a little changes to my previous addon and presented to Mozilla addon team for review this time I claimed for GPL license and after 10 days, today morning I received a mail from Mozilla saying that &lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;&lt;em&gt;“Your add-on, Wiki It, initial.rev3, has been preliminarily reviewed by an editor and is now available for download in our gallery”&lt;/em&gt;&lt;/strong&gt;&lt;/p&gt;
+
+&lt;p&gt;So finally I added my addon to addons gallery . Feeling Happy!!!!!&lt;/p&gt;
+</description>
+        <pubDate>Fri, 08 Jun 2012 15:36:16 +0530</pubDate>
+        <link>http://bharaththiruveedula.github.io//2012/06/08/first-addon-was-rejected/</link>
+        <guid isPermaLink="true">http://bharaththiruveedula.github.io//2012/06/08/first-addon-was-rejected/</guid>
+      </item>
+    
+      <item>
+        <title>First Addon for firefox</title>
+        <description>&lt;p&gt;As I am a big fan of Mozilla firefox because of its addons, I want to develop an addon for firefox( though a simple one ). I started learning how to create an addon for firefox from the great&lt;a href=&quot;https://developer.mozilla.org/en-US/addons&quot;&gt; mozilla developer site&lt;/a&gt;, I then found three ways for creating an addon for firefox.&lt;/p&gt;
+
+&lt;p&gt;First one is the old manual way where you can create all the files and folders like chrome, browser.js, locale, chrome.manifest, install.rdf etc., I think though this method makes the developer aware of all the files he is developing to make an addon up and running but it takes a lot of time for writing the content which doesn’t include the main logic of your addon.&lt;/p&gt;
+
+&lt;p&gt;Second is the creating an addon by using addon-sdk. It gaves you a lot of freedom for you to concentrate mainly on the code for functioning of your addon, rest of the things will take care by addon-sdk.&lt;/p&gt;
+
+&lt;p&gt;Third one is developing addon using addon-builder, it is lot easier than addon-sdk. You will code the addon on the cloud and you can test it with in a second and download the satisfied version of your addon. I want to develop an addon using addon builder and I want to develop an addon which will search in google for the highlighted text, and developed the addon and &lt;a href=&quot;https://addons.mozilla.org/en-US/firefox/addon/search-for-it/&quot;&gt;submitted&lt;/a&gt; to mozilla addons website. Right now it is under review and waiting for it to release officially.&lt;/p&gt;
+</description>
+        <pubDate>Sun, 13 May 2012 18:43:07 +0530</pubDate>
+        <link>http://bharaththiruveedula.github.io//2012/05/13/first-addon-for-firefox/</link>
+        <guid isPermaLink="true">http://bharaththiruveedula.github.io//2012/05/13/first-addon-for-firefox/</guid>
+      </item>
+    
+  </channel>
+</rss>
