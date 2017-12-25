@@ -104,7 +104,7 @@ df.index = ['Survived','Dead']
 df.plot(kind='bar',stacked=True, figsize=(15,8))
 ~~~
 
-<img src="https://raw.githubusercontent.com/bharaththiruveedula/bharaththiruveedula.github.io/master/public/img/titanic-bar-graph.png" />
+<img src="https://raw.githubusercontent.com/bharaththiruveedula/bharaththiruveedula.github.io/master/public/img/titanic_bar_graph.png" />
 
 It is obvious that majority of persons who survived are women. In the similar way, we can check whether the feature is relevant or not.
 
