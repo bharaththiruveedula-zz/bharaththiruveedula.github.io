@@ -12,7 +12,7 @@ title:               'Bharath Thiruveedula'
 name:                'Bharath Thiruveedula Blog'
 tagline:             'A blog about my new learnings in computer science'
 description:         'My blog about everything related to computer science'
-url:                 http://bharaththiruveedula.github.io
+url:                 https://bharaththiruveedula.github.io
 baseurl:             /
 paginate:            5
 
